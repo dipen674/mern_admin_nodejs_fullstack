@@ -1,5 +1,7 @@
+version: '3.8'
+
 services:
-  # MongoDB Service
+  # MongoDB Database Service
   mongodb:
     image: mongo:5.0
     container_name: mern-mongodb
@@ -13,13 +15,14 @@ services:
       - MONGO_INITDB_DATABASE=mern-admin
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
-      interval: 5s
+      interval: 10s
       timeout: 10s
       retries: 5
+      start_period: 30s
     networks:
       - mern-network
 
-  # Backend Service
+  # Node.js Backend API Service
   backend:
     build: .
     container_name: mern-backend
@@ -35,10 +38,16 @@ services:
     depends_on:
       mongodb:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/api/admin/list"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     networks:
       - mern-network
 
-  # Frontend Service
+  # React Frontend Service
   frontend:
     build: ./frontend
     container_name: mern-frontend
@@ -51,10 +60,19 @@ services:
     volumes:
       - /app/node_modules
       - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      - ./frontend/.env:/app/.env
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     stdin_open: true
     tty: true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     networks:
       - mern-network
 

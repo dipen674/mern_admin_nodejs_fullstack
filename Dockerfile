@@ -1,31 +1,22 @@
 FROM node:16-alpine
 
-# Install netcat for checking database connectivity
-RUN apk add --no-cache netcat-openbsd
-
+# Set working directory inside container
 WORKDIR /app
 
-# Copy package files
+# Copy package files first (optimizes Docker layer caching)
 COPY package*.json ./
 
-# Install dependencies
+# Install all dependencies
 RUN npm install
 
-# Copy source code
+# Copy application source code (includes .variables.env)
 COPY . .
 
-# Create necessary directories
+# Create necessary directories for file uploads
 RUN mkdir -p public/uploads/admin
 
-# Create .variables.env from template if it doesn't exist
-RUN if [ ! -f .variables.env ]; then cp .variables.env.tmp .variables.env; fi
-
-# Copy entrypoint script
-COPY docker-entrypoint.sh /app/docker-entrypoint.sh
-RUN chmod +x /app/docker-entrypoint.sh
-
-# Expose port
+# Expose application port
 EXPOSE 8888
 
-ENTRYPOINT ["/app/docker-entrypoint.sh"]
+# Start the application
 CMD ["npm", "start"]
