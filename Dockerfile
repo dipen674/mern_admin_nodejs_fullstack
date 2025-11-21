@@ -3,6 +3,9 @@ FROM node:16-alpine
 # Set working directory inside container
 WORKDIR /app
 
+RUN apk update \
+    && apk add --no-cache curl
+
 # Copy package files first (optimizes Docker layer caching)
 COPY package*.json ./
 

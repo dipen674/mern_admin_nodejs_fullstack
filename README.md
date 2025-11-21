@@ -1,88 +1,251 @@
-## App Built on top of this Starter project [IDURAR ERP/CRM](https://github.com/idurar/erp-crm)
-IDURAR is Open Source ERP/CRM (Invoice / Inventory / Accounting / HR) Based on Mern Stack (Node.js / Express.js / MongoDb / React.js ) with Ant Design (AntD) and Redux
-GitHub Repository : [https://github.com/idurar/idurar-erp-crm](https://github.com/idurar/idurar-erp-crm)
-<br/>
+# 🚀 MERN Admin Dashboard
 
-**⭐️ Demo Open Source Version** : [https://opensource.idurarapp.com](https://opensource.idurarapp.com)
-<br/>
-**🚀 Cloud Entreprise Version** : [https://www.idurarapp.com](https://www.idurarapp.com)
-<br/>
-#
-[![
-IDURAR is Open Source ERP/CRM (Invoice / Inventory / Accounting / HR) Based on Mern Stack (Node.js / Express.js / MongoDb / React.js )](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/ja242ld9m9z1c6ia7lu5.png)](https://github.com/idurar/idurar-erp-crm)
-
-
-
-
-# Starter Mern Antd Admin App , MERN Admin dashboard ,Antd Admin Template free
+A Dockerized MERN stack admin panel with secure authentication, built on top of the [IDURAR ERP/CRM](https://github.com/idurar/erp-crm) starter project.
+## 🗂️ Project Structure
 
 ```
-Don't forget please to ⭐ this repo if you like this Starter Antd Admin!
+mern-admin/
+├── controllers/
+│   └── authController.js       # Authentication logic
+├── routes/
+│   └── authApi.js             # Authentication routes
+├── models/                     # MongoDB schemas
+├── middleware/                 # Auth & validation middleware
+├── frontend/
+│   ├── src/
+│   │   ├── components/        # React components
+│   │   ├── redux/            # Redux store & actions
+│   │   ├── pages/            # Page components
+│   │   └── config/           # Configuration files
+│   └── Dockerfile            # Frontend container config
+├── docker-compose.yml         # Multi-container setup
+├── Dockerfile                 # Backend container config
+├── .variables.env            # Environment variables
+└── package.json              # Backend dependencies
 ```
 
-## Our Sponsors
+## ✨ Features
 
-[![DigitalOcean Referral Badge](https://web-platforms.sfo2.digitaloceanspaces.com/WWW/Badge%203.svg)](https://www.digitalocean.com/?refcode=4ead8370b905&utm_campaign=Referral_Invite&utm_medium=Referral_Program&utm_source=badge)
+### Backend
+- Built with Node.js, Express.js, and MongoDB
+- Generic CRUD API (Create / Read / Update / Delete)
+- Admin (User) Management API
+- JWT Authentication (JSON Web Token)
+- RESTful API architecture
 
+### Frontend
+- React.js with [Ant Design (AntD)](https://ant.design/)
+- Redux & Redux-thunk for state management
+- Generic CRUD Components/Modules
+- Admin Management Interface
+- Protected Routes (Private/Public)
+- Beautiful Dashboard UI
+- Responsive Design
 
-![starter-antd-admin-crud-auth-mern-crud-auth](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/opp4yj177dizyaosah0o.png)
+## 📋 Prerequisites
 
+### For Docker Setup (Recommended)
+- Docker
+- Docker Compose
 
-## Starter Antd Admin (Crud & auth) Mern App (Express.js / React / Redux / MongoDB)
+### For Manual Setup
+- Node.js (v16.x or higher)
+- MongoDB (local or Atlas)
+- npm or yarn
 
-Starter Crm App based on mern stack (Express.js / MongoDb / React / Redux / AntD) with generic crud and auth , admin management .
+## 🐳 Quick Start with Docker (Recommended)
 
-**Live App Demo** : [https://www.idurarapp.com](https://www.idurarapp.com)
+### 1. Clone the Repository
 
-
-## Setup backend
-
-1) just create MongoDB Atlas accout database url 
-2) change this file name .variables.env.tmp to  .variables.env
-3) open  .variables.env and paste your MongoDB url here :  DATABASE=your-mongodb-url
-4) npm install
-5) npm setup
-
-## Setup frontend
-1) cd frontend 
-2) npm install
-3) change api config to loaclhost in this : src/frontend/src/config/serverApiConfig.js
- 
-
-## start server
-1) npm start
-
-## start react app
-1) cd frontend
-2) npm start
-
+```bash
+git clone https://github.com/your-username/mern-admin.git
+cd mern-admin
 ```
 
-## App Features :
+### 2. Run the Application
 
-### Backend :
+```bash
+# Build and start all services
+docker-compose up --build
 
-* The backend is built with node.js , [express.js Framework](https://expressjs.com/) ,and MongoDb Database
-* Generic Crud Api (Create / Read / Update / Delete)
-* Admin (User) Management Api
-* Auth by Jwt json web token
+# Run in detached mode
+docker-compose up -d --build
 
-### Frontend :
-
-* The Frontend is built with React.js , [Ant Design (Antd)](https://ant.design/), and Redux , Redux-thunk.
-* Generic Crud Component (Module) (Create / Read / Update / Delete)
-* Admin (User) Management Module
-* Auth Component Login / Logout
-* Private Route and Public Route
-* Not Found Page
-* Beautiful UI Dashboard
-
-#
+# Stop services
+docker-compose down
 ```
 
-<br/>
+### 3. Access Points
 
-**⭐️ Demo Open Source Version** : [https://opensource.idurarapp.com](https://opensource.idurarapp.com)
-<br/>
-**🚀 Cloud Entreprise Version** : [https://www.idurarapp.com](https://www.idurarapp.com)
-<br/>
+- **Frontend**: [http://localhost:3000](http://localhost:3000)
+- **Backend API**: [http://localhost:8888](http://localhost:8888)
+- **MongoDB**: `localhost:27017`
+
+### 4. Default Login Credentials
+
+```
+Email: system@admin.com
+Password: AdminSecurePass123!
+```
+
+⚠️ **Important**: Change these credentials in production! Update in `controllers/authController.js`
+
+## 🔧 Manual Setup (Alternative)
+
+### Backend Setup
+
+1. **Configure MongoDB**
+   - Create a MongoDB Atlas account or use local MongoDB
+   - Get your database connection URL
+
+2. **Environment Variables**
+   ```bash
+   # Rename the file
+   mv .variables.env.tmp .variables.env
+   ```
+   
+3. **Update `.variables.env`**
+   ```env
+   DATABASE=your-mongodb-url
+   JWT_SECRET=your-secret-key
+   PORT=8888
+   ```
+
+4. **Install Dependencies & Setup**
+   ```bash
+   npm install
+   npm setup
+   ```
+
+5. **Start Backend Server**
+   ```bash
+   npm start
+   ```
+
+### Frontend Setup
+
+1. **Navigate to Frontend Directory**
+   ```bash
+   cd frontend
+   ```
+
+2. **Install Dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Configure API Endpoint**
+   - Open `src/config/serverApiConfig.js`
+   - Set API URL to `http://localhost:8888`
+
+4. **Start Frontend App**
+   ```bash
+   npm start
+   ```
+
+The application will be available at [http://localhost:3000](http://localhost:3000)
+
+## 🛠️ Troubleshooting
+
+### Docker Issues
+
+**Check Container Status**
+```bash
+docker-compose ps
+docker-compose logs -f backend
+docker-compose logs -f frontend
+```
+
+**Restart Services**
+```bash
+# Restart specific service
+docker-compose restart backend
+
+# Rebuild specific service
+docker-compose up -d --build backend
+```
+
+**Check Database**
+```bash
+# Verify admin user exists in MongoDB
+docker-compose exec mongodb mongo mern_admin --eval "db.admins.find().pretty()"
+```
+
+### Common Problems & Solutions
+
+1. **CORS Errors**
+   - **Problem**: Frontend can't connect to backend
+   - **Solution**: Environment variables are used instead of proxy
+
+2. **Any Email/Password Works**
+   - **Problem**: Demo authentication was enabled
+   - **Solution**: Replaced with secure hardcoded credentials
+
+3. **Registration Not Working**
+   - **Problem**: No registration route defined
+   - **Solution**: Use secure initial login; admins created through UI
+
+4. **Database Connection Issues**
+   - **Problem**: MongoDB connection failures
+   - **Solution**: Fixed Docker network configuration
+
+### API Testing
+
+**Test Login Endpoint**
+```bash
+curl -X POST http://localhost:8888/api/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "system@admin.com",
+    "password": "AdminSecurePass123!"
+  }'
+```
+
+## 🔒 Security Notes
+
+- ⚠️ Change default credentials before production deployment
+- The system creates the admin user automatically on first login
+- Additional admins can be created through the UI after initial login
+- JWT tokens are used for secure authentication
+- Environment variables should never be committed to version control
+
+### Development Workflow
+
+```bash
+# Watch backend logs
+docker-compose logs -f backend
+
+# Watch frontend logs
+docker-compose logs -f frontend
+
+# Access backend container
+docker-compose exec backend sh
+
+# Access frontend container
+docker-compose exec frontend sh
+```
+
+## 🌐 Deployment
+
+### Deploy with Docker
+
+```bash
+# Build production images
+docker-compose -f docker-compose.prod.yml build
+
+# Deploy to server
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+## 📄 License
+
+This project is open source and available under the MIT License.
+
+## 🙏 Acknowledgments
+
+- [IDURAR ERP/CRM](https://github.com/idurar/idurar-erp-crm) - Base starter project
+- [Ant Design](https://ant.design/) - UI Component library
+- [Express.js](https://expressjs.com/) - Backend framework
+- [React.js](https://reactjs.org/) - Frontend library
+
+**Built with ❤️ using MERN Stack**

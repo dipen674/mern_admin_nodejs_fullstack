@@ -1,101 +1,67 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-
 const mongoose = require("mongoose");
-
 const Admin = mongoose.model("Admin");
-
 require("dotenv").config({ path: ".variables.env" });
-
-exports.register = async (req, res) => {
-  try {
-    let { email, password, passwordCheck, name, surname } = req.body;
-
-    if (!email || !password || !passwordCheck)
-      return res.status(400).json({ msg: "Not all fields have been entered." });
-    if (password.length < 5)
-      return res
-        .status(400)
-        .json({ msg: "The password needs to be at least 5 characters long." });
-    if (password !== passwordCheck)
-      return res
-        .status(400)
-        .json({ msg: "Enter the same password twice for verification." });
-
-    const existingAdmin = await Admin.findOne({ email: email });
-    if (existingAdmin)
-      return res
-        .status(400)
-        .json({ msg: "An account with this email already exists." });
-
-    if (!name) name = email;
-
-    const salt = await bcrypt.genSalt();
-    const passwordHash = await bcrypt.hash(password, salt);
-
-    const newAdmin = new Admin({
-      email,
-      password: passwordHash,
-      name,
-      surname,
-    });
-    const savedAdmin = await newAdmin.save();
-    res.status(200).send({
-      success: true,
-      admin: {
-        id: savedAdmin._id,
-        name: savedAdmin.name,
-        surname: savedAdmin.surname,
-      },
-    });
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      result: null,
-      message: err.message,
-    });
-  }
-};
 
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // validate
-    if (!email || !password)
-      return res.status(400).json({ msg: "Not all fields have been entered." });
-
-    const admin = await Admin.findOne({ email: email });
-    // console.log(admin);
-    if (!admin)
-      return res.status(400).json({
-        success: false,
-        result: null,
-        message: "No account with this email has been registered.",
+    // SECURE HARDCODED CREDENTIALS - CHANGE THESE!
+    const SECURE_EMAIL = "system@admin.com";
+    const SECURE_PASSWORD = "AdminSecurePass123!";
+    
+    // Validate input
+    if (!email || !password) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Email and password are required." 
       });
+    }
 
-    const isMatch = await bcrypt.compare(password, admin.password);
-    if (!isMatch)
-      return res.status(400).json({
-        success: false,
-        result: null,
-        message: "Invalid credentials.",
+    // Only allow the hardcoded credentials
+    if (email !== SECURE_EMAIL || password !== SECURE_PASSWORD) {
+      return res.status(401).json({ 
+        success: false, 
+        message: "Invalid credentials. Please use the system administrator credentials." 
       });
+    }
 
+    // Find or create the system admin in database
+    let admin = await Admin.findOne({ email: SECURE_EMAIL });
+    
+    if (!admin) {
+      // Create the admin if doesn't exist
+      const salt = await bcrypt.genSalt();
+      const passwordHash = await bcrypt.hash(SECURE_PASSWORD, salt);
+      
+      admin = new Admin({
+        email: SECURE_EMAIL,
+        password: passwordHash,
+        name: "System",
+        surname: "Administrator",
+        role: "super_admin",
+        isLoggedIn: false
+      });
+      await admin.save();
+      console.log("System admin created successfully");
+    }
+
+    // Generate JWT token
     const token = jwt.sign(
       {
-        exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24,
+        exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24, // 24 hours
         id: admin._id,
       },
       process.env.JWT_SECRET
     );
 
+    // Update login status
     const result = await Admin.findOneAndUpdate(
       { _id: admin._id },
-      { isLoggedIn: true },
-      {
-        new: true,
-      }
+      { isLoggedIn: true, lastLogin: new Date() },
+      { new: true }
     ).exec();
 
     res.json({
@@ -105,16 +71,20 @@ exports.login = async (req, res) => {
         admin: {
           id: result._id,
           name: result.name,
+          email: result.email,
           isLoggedIn: result.isLoggedIn,
         },
       },
-      message: "Successfully login admin",
+      message: "Secure system login successful",
     });
+    
   } catch (err) {
-    // res.status(500).json({ success: false, result:null, message: err.message });
-    res
-      .status(500)
-      .json({ success: false, result: null, message: err.message });
+    console.error("Login error:", err);
+    res.status(500).json({ 
+      success: false, 
+      result: null,
+      message: "Internal server error during authentication." 
+    });
   }
 };
 
@@ -143,7 +113,7 @@ exports.isValidToken = async (req, res, next) => {
       return res.status(401).json({
         success: false,
         result: null,
-        message: "Admin doens't Exist, authorization denied.",
+        message: "Admin doesn't exist, authorization denied.",
         jwtExpired: true,
       });
 
@@ -151,12 +121,11 @@ exports.isValidToken = async (req, res, next) => {
       return res.status(401).json({
         success: false,
         result: null,
-        message: "Admin is already logout try to login, authorization denied.",
+        message: "Admin is already logged out. Please login again.",
         jwtExpired: true,
       });
     else {
       req.admin = admin;
-      // console.log(req.admin);
       next();
     }
   } catch (err) {
@@ -170,13 +139,23 @@ exports.isValidToken = async (req, res, next) => {
 };
 
 exports.logout = async (req, res) => {
-  const result = await Admin.findOneAndUpdate(
-    { _id: req.admin._id },
-    { isLoggedIn: false },
-    {
-      new: true,
-    }
-  ).exec();
+  try {
+    const result = await Admin.findOneAndUpdate(
+      { _id: req.admin._id },
+      { isLoggedIn: false },
+      { new: true }
+    ).exec();
 
-  res.status(200).json({ isLoggedIn: result.isLoggedIn });
+    res.status(200).json({ 
+      success: true,
+      isLoggedIn: result.isLoggedIn,
+      message: "Logout successful"
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Error during logout",
+      error: err.message
+    });
+  }
 };
