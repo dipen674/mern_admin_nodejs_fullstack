@@ -1,19 +1,19 @@
-FROM node:16-alpine
-
-# Set working directory
+# --- Stage 1: Build ---
+FROM node:16-alpine as builder
 WORKDIR /app
-
-# Copy package files for dependency installation
 COPY package*.json ./
-
-# Install dependencies
 RUN npm install
-
-# Copy application source code (includes .env file)
 COPY . .
 
-# Expose development server port
-EXPOSE 3000
+# ARG allows us to pass variables from docker-compose during the build
+ARG REACT_APP_API_BASE_URL
+ENV REACT_APP_API_BASE_URL=$REACT_APP_API_BASE_URL
 
-# Start React development server
-CMD ["npm", "start"]
+RUN npm run build
+
+# --- Stage 2: Serve ---
+FROM nginx:alpine
+COPY --from=builder /app/build /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]

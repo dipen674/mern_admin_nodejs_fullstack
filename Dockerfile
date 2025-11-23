@@ -1,18 +1,19 @@
 FROM node:16-alpine
 
-# Set working directory inside container
 WORKDIR /app
 
-RUN apk update \
-    && apk add --no-cache curl
+# Install curl (useful for healthchecks, keeps image small)
+RUN apk update && apk add --no-cache curl
 
-# Copy package files first (optimizes Docker layer caching)
+# Copy package files
 COPY package*.json ./
 
-# Install all dependencies
-RUN npm install
+# Install ONLY production dependencies
+# (Skips devDependencies like nodemon, eslint, etc.)
+RUN npm install --only=production
 
-# Copy application source code (includes .variables.env)
+# Copy application source code 
+# (The .dockerignore we made in Step 1 prevents frontend/ being copied here)
 COPY . .
 
 # Create necessary directories for file uploads

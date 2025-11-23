@@ -8,47 +8,64 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // SECURE HARDCODED CREDENTIALS - CHANGE THESE!
-    const SECURE_EMAIL = "system@admin.com";
-    const SECURE_PASSWORD = "AdminSecurePass123!";
-    
-    // Validate input
+    // 1. Validate input
     if (!email || !password) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Email and password are required." 
+      return res.status(400).json({
+        success: false,
+        message: "Email and password are required.",
       });
     }
 
-    // Only allow the hardcoded credentials
-    if (email !== SECURE_EMAIL || password !== SECURE_PASSWORD) {
-      return res.status(401).json({ 
-        success: false, 
-        message: "Invalid credentials. Please use the system administrator credentials." 
-      });
-    }
+    // 2. Try to find the admin in the database
+    // We check 'removed: false' to ensure deleted admins cannot login
+    let admin = await Admin.findOne({ email: email, removed: false });
 
-    // Find or create the system admin in database
-    let admin = await Admin.findOne({ email: SECURE_EMAIL });
-    
-    if (!admin) {
-      // Create the admin if doesn't exist
-      const salt = await bcrypt.genSalt();
-      const passwordHash = await bcrypt.hash(SECURE_PASSWORD, salt);
+    // 3. Authentication Logic
+    if (admin) {
+      // --- SCENARIO A: Admin found in Database ---
       
-      admin = new Admin({
-        email: SECURE_EMAIL,
-        password: passwordHash,
-        name: "System",
-        surname: "Administrator",
-        role: "super_admin",
-        isLoggedIn: false
-      });
-      await admin.save();
-      console.log("System admin created successfully");
+      // Compare the password sent by user with the hashed password in DB
+      // We use await here to prevent blocking the server
+      const isMatch = await bcrypt.compare(password, admin.password);
+
+      if (!isMatch) {
+        return res.status(401).json({
+          success: false,
+          message: "Invalid credentials.",
+        });
+      }
+    } else {
+      // --- SCENARIO B: Admin NOT found in Database ---
+      
+      // Check if this is the System Admin using hardcoded recovery credentials
+      const SECURE_EMAIL = "system@admin.com";
+      const SECURE_PASSWORD = "AdminSecurePass123!";
+
+      if (email === SECURE_EMAIL && password === SECURE_PASSWORD) {
+        // Auto-create the system admin since they don't exist in DB yet
+        const salt = await bcrypt.genSalt();
+        const passwordHash = await bcrypt.hash(SECURE_PASSWORD, salt);
+
+        admin = new Admin({
+          email: SECURE_EMAIL,
+          password: passwordHash,
+          name: "System",
+          surname: "Administrator",
+          role: "super_admin",
+          isLoggedIn: false,
+        });
+        await admin.save();
+        console.log("System admin created successfully via Recovery Login");
+      } else {
+        // User not found and credentials do not match system admin
+        return res.status(401).json({
+          success: false,
+          message: "Invalid credentials.",
+        });
+      }
     }
 
-    // Generate JWT token
+    // 4. Successful Login (Generate Token)
     const token = jwt.sign(
       {
         exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24, // 24 hours
@@ -57,13 +74,14 @@ exports.login = async (req, res) => {
       process.env.JWT_SECRET
     );
 
-    // Update login status
+    // Update login status in DB
     const result = await Admin.findOneAndUpdate(
       { _id: admin._id },
       { isLoggedIn: true, lastLogin: new Date() },
       { new: true }
     ).exec();
 
+    // Send response
     res.json({
       success: true,
       result: {
@@ -73,17 +91,18 @@ exports.login = async (req, res) => {
           name: result.name,
           email: result.email,
           isLoggedIn: result.isLoggedIn,
+          role: result.role, 
         },
       },
-      message: "Secure system login successful",
+      message: "Login successful",
     });
-    
+
   } catch (err) {
     console.error("Login error:", err);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       result: null,
-      message: "Internal server error during authentication." 
+      message: "Internal server error during authentication.",
     });
   }
 };
@@ -108,7 +127,7 @@ exports.isValidToken = async (req, res, next) => {
         jwtExpired: true,
       });
 
-    const admin = await Admin.findOne({ _id: verified.id });
+    const admin = await Admin.findOne({ _id: verified.id, removed: false });
     if (!admin)
       return res.status(401).json({
         success: false,

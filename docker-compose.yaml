@@ -1,5 +1,7 @@
+version: '3.8'
+
 services:
-  # MongoDB Database Service
+  # 1. MongoDB Service
   mongodb:
     image: mongo:5.0
     container_name: mern-mongodb
@@ -16,11 +18,10 @@ services:
       interval: 10s
       timeout: 10s
       retries: 5
-      start_period: 30s
     networks:
       - mern-network
 
-  # Node.js Backend API Service
+  # 2. Backend Service
   backend:
     build: .
     container_name: mern-backend
@@ -29,48 +30,35 @@ services:
       - "8888:8888"
     environment:
       - NODE_ENV=production
+      # Ensure your backend knows where the database is
+      - DATABASE=mongodb://mongodb:27017/mern-admin 
     volumes:
-      - ./.variables.env:/app/.variables.env
+      # Only mount uploads. DO NOT mount node_modules or source code in production
       - ./public/uploads:/app/public/uploads
-      - /app/node_modules
+      - ./.variables.env:/app/.variables.env
     depends_on:
       mongodb:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8888/api/admin/list"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
     networks:
       - mern-network
 
-  # React Frontend Service
+  # 3. Frontend Service (Optimized)
   frontend:
-    build: ./frontend
+    build: 
+      context: ./frontend
+      args:
+        # Since Nginx proxies /api, we can just point to the root relative path
+        # Or you can put the full URL if you prefer.
+        - REACT_APP_API_BASE_URL=/api/
     container_name: mern-frontend
     restart: unless-stopped
     ports:
-      - "3000:3000"
-    environment:
-      - REACT_APP_API_BASE_URL=http://localhost:8888/api/
-      - CHOKIDAR_USEPOLLING=true
-    volumes:
-      - /app/node_modules
-      - ./frontend/src:/app/src
-      - ./frontend/public:/app/public
-      - ./frontend/.env:/app/.env
+      # Map Host Port 3000 to Container Port 80 (Nginx)
+      - "3000:80"
     depends_on:
-      backend:
-        condition: service_healthy
-    stdin_open: true
-    tty: true
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
+      - backend
+    # We removed the 'volumes' mapping for /src here. 
+    # This forces it to use the optimized files inside the image.
     networks:
       - mern-network
 
