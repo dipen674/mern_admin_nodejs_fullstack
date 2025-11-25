@@ -42,13 +42,12 @@ services:
     networks:
       - mern-network
 
-  # 3. Frontend Service (Optimized)
+  # 3. Frontend Service
   frontend:
     build: 
       context: ./frontend
       args:
         # Since Nginx proxies /api, we can just point to the root relative path
-        # Or you can put the full URL if you prefer.
         - REACT_APP_API_BASE_URL=/api/
     container_name: mern-frontend
     restart: unless-stopped
@@ -57,8 +56,6 @@ services:
       - "3000:80"
     depends_on:
       - backend
-    # We removed the 'volumes' mapping for /src here. 
-    # This forces it to use the optimized files inside the image.
     networks:
       - mern-network
 

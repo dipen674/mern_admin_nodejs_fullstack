@@ -1,3 +1,4 @@
+# 04-backend-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -12,9 +13,14 @@ spec:
       labels:
         app: backend
     spec:
+    #   initContainers:
+    #   - name: wait-for-mongodb
+    #     image: busybox:1.36
+    #     # Waits until the mongodb-service is reachable on port 27017
+    #     command: ['sh', '-c', 'echo Waiting for DB...; until nc -z mongodb-service 27017; do echo sleeping; sleep 2; done; echo DB is ready.']
       containers:
         - name: backend
-          image: deependrabhatta/mern-admin:backendv1 # Uses the image you built locally
+          image: deependrabhatta/mern-admin:backendv1
           imagePullPolicy: Always
           ports:
             - containerPort: 8888
@@ -33,15 +39,3 @@ spec:
                 secretKeyRef:
                   name: mern-secrets
                   key: jwt-secret
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: backend # The frontend Nginx will look for this hostname
-spec:
-  selector:
-    app: backend
-  ports:
-    - protocol: TCP
-      port: 8888
-      targetPort: 8888
