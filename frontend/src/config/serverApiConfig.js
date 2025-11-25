@@ -1,11 +1,12 @@
 console.log(
-  "process env REACT_APP_API_BASE_URL",
-  process.env.REACT_APP_API_BASE_URL
+  "process env REACT_APP_API_BASE_URL",
+  process.env.REACT_APP_API_BASE_URL
 );
 
-// If the Env variable is set (which we did in Docker), use it.
-// Otherwise, fallback to localhost for local non-docker development.
+// We changed the fallback from the absolute URL to a relative path ('/api/').
+// This ensures that even if the environment variable fails to load,
+// the browser will still use its current host/port, routing traffic through Nginx.
 export const API_BASE_URL =
-  process.env.REACT_APP_API_BASE_URL || "http://localhost:8888/api/";
+  process.env.REACT_APP_API_BASE_URL || "/api/";
 
 export const ACCESS_TOKEN_NAME = "x-auth-token";

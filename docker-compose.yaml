@@ -24,7 +24,7 @@ services:
   backend:
     # --- CHANGE: Removed 'build: .' and added 'image:' ---
     # This pulls the latest image pushed by your CI pipeline.
-    image: deependrabhatta/githubactions_mern:backend-latest
+    build: .
     container_name: mern-backend
     restart: unless-stopped
     ports:
@@ -47,7 +47,7 @@ services:
   frontend:
     # --- CHANGE: Removed 'build: context: ./frontend' and added 'image:' ---
     # This pulls the latest image pushed by your CI pipeline.
-    image: deependrabhatta/githubactions_mern:frontend-latest
+    build: ./frontend
     container_name: mern-frontend
     restart: unless-stopped
     ports:
