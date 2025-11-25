@@ -2,9 +2,9 @@ name: Docker MERN Stack CI/CD
 
 on:
   push:
-    branches: [ main ]
+    branches: [ develop, main ]
   pull_request:
-    branches: [ main ]
+    branches: [ develop, main ]
 
 env:
   # FINAL VARIABLE NAME: The single, complete repository name in Docker Hub
