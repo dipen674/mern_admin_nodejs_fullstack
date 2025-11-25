@@ -7,12 +7,12 @@ on:
     branches: [ main ]
 
 env:
-  # Docker Hub repository path prefix
-  DOCKER_REPO_PREFIX: deependrabhatta/githubactions_mern
+  # FINAL VARIABLE NAME: The single, complete repository name in Docker Hub
+  DOCKER_REPO: deependrabhatta/githubactions_mern
+  
   IMAGE_TAG: ${{ github.sha }}
   
-  # --- Frontend Build Argument ---
-  # Defining the REACT_APP_API_BASE_URL here for clean management
+  # Frontend Build Argument
   FRONTEND_API_BASE_URL: /api/
 
 jobs:
@@ -34,11 +34,12 @@ jobs:
       - name: Build and Push Backend Image
         uses: docker/build-push-action@v5
         with:
-          context: . # Looks for Dockerfile in the root
+          context: . 
           push: true
+          # TAGGING: Pushes to deependrabhatta/githubactions_mern with tag :backend-latest
           tags: |
-            ${{ env.DOCKER_REPO_PREFIX }}-backend:latest
-            ${{ env.DOCKER_REPO_PREFIX }}-backend:${{ env.IMAGE_TAG }}
+            ${{ env.DOCKER_REPO }}:backend-latest
+            ${{ env.DOCKER_REPO }}:backend-${{ env.IMAGE_TAG }}
           file: ./Dockerfile
 
   build_frontend:
@@ -59,11 +60,11 @@ jobs:
       - name: Build and Push Frontend Image
         uses: docker/build-push-action@v5
         with:
-          context: ./frontend # Looks for Dockerfile in the 'frontend' directory
+          context: ./frontend
           push: true
+          # TAGGING: Pushes to deependrabhatta/githubactions_mern with tag :frontend-latest
           tags: |
-            ${{ env.DOCKER_REPO_PREFIX }}-frontend:latest
-            ${{ env.DOCKER_REPO_PREFIX }}-frontend:${{ env.IMAGE_TAG }}
-          # Pass the build argument using the new env variable
+            ${{ env.DOCKER_REPO }}:frontend-latest
+            ${{ env.DOCKER_REPO }}:frontend-${{ env.IMAGE_TAG }}
           build-args: |
             REACT_APP_API_BASE_URL=${{ env.FRONTEND_API_BASE_URL }}
