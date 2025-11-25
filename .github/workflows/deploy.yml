@@ -100,9 +100,9 @@ jobs:
       - name: Pull and Deploy with Docker Compose
         run: |
           # 1. Pull the newly built images (using the latest tag)
-          docker compose -f docker-compose.yml pull
+          docker compose -f docker-compose.yaml pull
           
           # 2. Stop and remove old containers, then create and start new ones
           # -d: run in detached mode
           # --force-recreate: ensures new containers are created from the new images
-          docker compose -f docker-compose.yml up -d --force-recreate
+          docker compose -f docker-compose.yaml up -d --force-recreate
