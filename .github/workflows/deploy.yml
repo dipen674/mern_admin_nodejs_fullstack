@@ -40,7 +40,6 @@ jobs:
           tags: |
             ${{ env.DOCKER_REPO }}:backend-${{ env.IMAGE_TAG }}-${{ env.BUILD_DATE }}
             ${{ env.DOCKER_REPO }}:backend-latest
-          file: ./Dockerfile
 
   # -------------------
   # 2. Build Frontend

@@ -7,3 +7,5 @@ frontend
 .env
 .variables.env.tmp  
 .variables.env
+k8s
+charts
