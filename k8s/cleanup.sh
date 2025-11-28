@@ -1,42 +1,60 @@
 #!/bin/bash
 
-# --- Configuration ---
-YELLOW='\033[1;33m'
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-NC='\033[0m' # No Color
-
-# Define all manifest files in the logical order they were applied
-# Note: We delete them in reverse order, but defining them here ensures we hit every resource.
+# --- Define Manifests ---
+# Define all manifest files in the logical order they were applied.
+# Note: Files are DELETED in this array's order.
 MANIFESTS=(
   ingress.yaml
   frontend-deployment.yaml
   frontend-svc.yaml
   backend-deployment.yaml
   backend-svc.yaml
-  mongodb-pvc.yaml  #Don't delete PVC if you want to keep data
+  mongodb-pvc.yaml  # Note: This will delete the PVC, potentially losing data. Remove if retaining data.
   mongodb-svc.yaml
   secrets.yaml
 )
 
 # --- Step 1: Delete Kubernetes Resources ---
-echo -e "${RED}--- 1. Deleting Application Manifests (Deployments, Services, Secrets) ---${NC}"
+echo "--- 1. Deleting Application Manifests (Ingress, Deployments, Services, PVCs, Secrets) ---"
 
-# We use the array to delete everything we created
+# Iterate and delete
 for file in "${MANIFESTS[@]}"; do
   if [ -f "$file" ]; then
-    echo -e "  Deleting: $file"
-    # --ignore-not-found=true prevents the script from stopping if a resource was already deleted
+    echo "  Deleting: $file"
+    # --ignore-not-found=true prevents script failure
     # --force ensures immediate termination
     kubectl delete -f "$file" --ignore-not-found=true --force
   else
-    echo -e "  [SKIP] File not found: $file"
+    echo "  [SKIP] File not found: $file"
   fi
 done
 
+# --- Step 2: Cleanup Minikube Addons (Optional but thorough) ---
+echo ""
+echo "--- 2. Disabling Minikube Ingress Addon ---"
+# Check if ingress is enabled by searching the output of minikube addons list
+if minikube addons list | grep 'ingress' | grep -q 'enabled'; then
+    echo "Disabling Minikube Ingress Addon..."
+    minikube addons disable ingress
+else
+    echo "Minikube Ingress Addon is already disabled."
+fi
 
-# --- Step 2: Final Status Check ---
-echo -e "\n${GREEN}Cleanup Complete! Minikube remains running.${NC}"
-echo -e "Checking remaining Pods and Services:"
-kubectl get pods
-kubectl get svc
+
+# --- Step 3: Final Status Check ---
+echo ""
+echo "--- 3. Cleanup Complete! ---"
+
+# Check for remaining application resources
+echo "Checking remaining Kubernetes resources for confirmation:"
+echo "  Remaining Pods:"
+# Show only running or pending pods
+kubectl get pods --field-selector=status.phase!=Succeeded
+
+echo ""
+echo "  Remaining Services:"
+# Filter out standard Kubernetes services
+kubectl get svc | grep -v 'kubernetes' | grep -v 'kube-dns' | grep -v 'metrics-server'
+
+echo ""
+echo "All application resources defined in the manifest files have been targeted for deletion."
