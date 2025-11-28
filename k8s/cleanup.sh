@@ -14,7 +14,7 @@ MANIFESTS=(
   07-frontend-svc.yaml
   04-backend-deployment.yaml
   05-backend-svc.yaml
-#   02-mongodb-pvc.yaml # StatefulSet/PVC
+  02-mongodb-pvc.yaml  #Don't delete PVC if you want to keep data
   03-mongodb-svc.yaml
   01-secrets.yaml
 )

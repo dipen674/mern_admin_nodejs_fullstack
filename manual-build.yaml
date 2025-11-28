@@ -19,18 +19,14 @@ services:
       - mern-network
 
   backend:
-    image: deependrabhatta/githubactions_mern:backend-latest
+    build: ./backend
     container_name: mern-backend
     restart: unless-stopped
     ports:
       - "8888:8888"
     env_file:
-      - ./backend/variables.env   # non-sensitive configs
-    environment:
-      - DATABASE=${DATABASE}
-      - JWT_SECRET=${JWT_SECRET}
-      - SECRET=${SECRET}
-      - KEY=${KEY}
+      - ./backend/.variables.env   # non-sensitive configs
+      - ./.env  # sensitive configs
     volumes:
       - ./public/uploads:/app/public/uploads
     depends_on:
@@ -40,7 +36,7 @@ services:
       - mern-network
 
   frontend:
-    image: deependrabhatta/githubactions_mern:frontend-latest
+    build: ./frontend
     container_name: mern-frontend
     restart: unless-stopped
     ports:

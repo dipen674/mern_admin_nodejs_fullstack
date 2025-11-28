@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-config
+data:
+  REACT_APP_API_BASE_URL: {{ .Values.frontend.env.apiBaseUrl | quote }}
+  GENERATE_SOURCEMAP: {{ .Values.frontend.env.generateSourceMap | quote }}
+  REACT_APP_DEV_REMOTE: {{ .Values.frontend.env.devRemote | quote }}

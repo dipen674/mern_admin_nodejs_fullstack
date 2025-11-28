@@ -1,0 +1,46 @@
+# charts/mern/templates/backend-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+spec:
+  replicas: {{ .Values.backend.replicas }}
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+          imagePullPolicy: "{{ .Values.backend.image.pullPolicy }}"
+          ports:
+            - containerPort: {{ .Values.backend.port }}
+          envFrom:
+            - configMapRef:
+                name: backend-config
+          env:
+            - name: DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: mern-secrets
+                  key: mongo-uri
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: mern-secrets
+                  key: jwt-secret
+            - name: SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: mern-secrets
+                  key: secret
+
+            - name: KEY
+              valueFrom:
+                secretKeyRef:
+                  name: mern-secrets
+                  key: key 

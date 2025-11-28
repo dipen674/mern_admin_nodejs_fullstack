@@ -5,3 +5,5 @@ docker-compose.yaml
 .git
 frontend
 .env
+.variables.env.tmp  
+.variables.env

@@ -1,0 +1,58 @@
+# charts/mern/values.yaml
+
+global:
+  nameOverride: ""
+  fullnameOverride: ""
+
+mongodb:
+  image: "mongo:5.0"
+  storage: "1Gi"
+  serviceName: "mongodb-service"
+
+backend:
+  image:
+    repository: deependrabhatta/githubactions_mern
+    tag: backend-latest
+    pullPolicy: Always
+  replicas: 2
+  port: 8888
+  env:
+    nodeEnv: "production"
+  secrets:
+    databaseUri: "mongodb://mongodb-service:27017/mern-admin"
+    jwtSecret: "a49f599467e0726a75ad5a01a65c27a3b34285bb5e3d954a6f8b9b3d256b6ef2"
+    secret: "9f8a7c6d5e4b3a2c1d0f"
+    key: "abc123xyz789"
+    jwtScheme: "jwt"
+    jwtTokenPrefix: "Bearer"
+    jwtTokenExpiration: "18000000"
+    jwtTokenHashAlgo: "SHA-256"
+
+frontend:
+  image:
+    repository: deependrabhatta/githubactions_mern
+    tag: frontend-latest
+    pullPolicy: Always
+  replicas: 2
+  port: 80
+  env:
+    apiBaseUrl: "/api/"
+    generateSourceMap: "false"
+    devRemote: "local"
+
+
+ingress:
+  enabled: true
+  annotations:
+    ingress.kubernetes.io/ssl-redirect: "false"
+  hosts:
+    - host: ""    # keep empty for minikube IP
+      paths:
+        - path: /
+          pathType: Prefix
+          service: frontend
+          port: 80
+        - path: /api
+          pathType: Prefix
+          service: backend
+          port: 8888
