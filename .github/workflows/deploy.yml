@@ -10,8 +10,8 @@ permissions:
   contents: write
 
 env:
-  DOCKER_REPO: dipen674/mern_admin_nodejs_fullstack
-  FRONTEND_API_BASE_URL: /api/
+  DOCKER_REPO: deependrabhatta/githubactions_mern
+  # FRONTEND_API_BASE_URL: /api/
 
 jobs:
 # -------------------
