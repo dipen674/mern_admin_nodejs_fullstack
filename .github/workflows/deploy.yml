@@ -6,22 +6,33 @@ on:
   pull_request:
     branches: [ develop, main ]
 
+permissions:
+  contents: write
+
 env:
-  DOCKER_REPO: deependrabhatta/githubactions_mern
+  DOCKER_REPO: dipen674/mern_admin_nodejs_fullstack
   FRONTEND_API_BASE_URL: /api/
 
 jobs:
 # -------------------
-# 1. Build & Scan Backend
+# 1. Build & scan backend
 # -------------------
   build_backend:
     runs-on: ubuntu-latest
+    outputs:
+      TIMESTAMP: ${{ steps.ts.outputs.timestamp }}
+      SHORT_SHA: ${{ steps.sha.outputs.short }}
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Set timestamp
-        run: echo "TIMESTAMP=$(date +'%Y-%m-%d_%H-%M-%S')" >> $GITHUB_ENV
+        id: ts
+        run: echo "timestamp=$(date +'%Y-%m-%d_%H-%M-%S')" >> $GITHUB_OUTPUT
+
+      - name: Set short SHA
+        id: sha
+        run: echo "short=${GITHUB_SHA::12}" >> $GITHUB_OUTPUT
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -32,14 +43,14 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and Push Backend Image
+      - name: Build and push backend image
         uses: docker/build-push-action@v5
         with:
           context: ./backend
           push: true
           no-cache: true
           tags: |
-            ${{ env.DOCKER_REPO }}:backend-${{ env.TIMESTAMP }}-${{ github.sha }}
+            ${{ env.DOCKER_REPO }}:backend-${{ steps.ts.outputs.timestamp }}-${{ github.sha }}
             ${{ env.DOCKER_REPO }}:backend-latest
 
       - name: Install Trivy
@@ -49,29 +60,32 @@ jobs:
       - name: Download Trivy HTML template
         run: wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl -O html.tpl
 
-      - name: Generate Trivy HTML Report (Backend)
+      - name: Generate Trivy HTML report (backend)
         run: |
           trivy image --format template --template "@html.tpl" \
             -o trivy-backend-report.html \
-            ${{ env.DOCKER_REPO }}:backend-${{ env.TIMESTAMP }}-${{ github.sha }}
+            ${{ env.DOCKER_REPO }}:backend-${{ steps.ts.outputs.timestamp }}-${{ github.sha }}
 
-      - name: Upload Backend HTML Report
+      - name: Upload backend HTML report
         uses: actions/upload-artifact@v4
         with:
           name: trivy-backend-html
           path: trivy-backend-report.html
 
 # -------------------
-# 2. Build & Scan Frontend
+# 2. Build & scan frontend
 # -------------------
   build_frontend:
     runs-on: ubuntu-latest
+    needs: [build_backend]
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set timestamp
-        run: echo "TIMESTAMP=$(date +'%Y-%m-%d_%H-%M-%S')" >> $GITHUB_ENV
+      - name: Reuse timestamp & short SHA
+        run: |
+          echo "TIMESTAMP=${{ needs.build_backend.outputs.TIMESTAMP }}" >> $GITHUB_ENV
+          echo "SHORT_SHA=${{ needs.build_backend.outputs.SHORT_SHA }}" >> $GITHUB_ENV
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -82,7 +96,7 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and Push Frontend Image
+      - name: Build and push frontend image
         uses: docker/build-push-action@v5
         with:
           context: ./frontend
@@ -101,20 +115,20 @@ jobs:
       - name: Download Trivy HTML template
         run: wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl -O html.tpl
 
-      - name: Generate Trivy HTML Report (Frontend)
+      - name: Generate Trivy HTML report (frontend)
         run: |
           trivy image --format template --template "@html.tpl" \
             -o trivy-frontend-report.html \
             ${{ env.DOCKER_REPO }}:frontend-${{ env.TIMESTAMP }}-${{ github.sha }}
 
-      - name: Upload Frontend HTML Report
+      - name: Upload frontend HTML report
         uses: actions/upload-artifact@v4
         with:
           name: trivy-frontend-html
           path: trivy-frontend-report.html
 
 # -------------------
-# 3. Deploy to Testing (Docker Compose)
+# 3. Deploy to testing (Docker Compose)
 # -------------------
   deploy_testing:
     needs: [build_backend, build_frontend]
@@ -124,12 +138,12 @@ jobs:
       - name: Clear workspace
         run: sudo rm -rf $GITHUB_WORKSPACE/*
 
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
           clean: true
 
-      - name: Pull and Deploy with Docker Compose
+      - name: Pull and deploy with Docker Compose
         run: |
           DOCKER_REPO=${{ env.DOCKER_REPO }} IMAGE_TAG=${{ github.sha }} \
           docker compose -f docker-compose.yaml pull
@@ -139,50 +153,115 @@ jobs:
 # -------------------
 # 4. Deploy to Minikube (Helm)
 # -------------------
-  deploy_minikube:
-    needs: [build_backend, build_frontend]
-    runs-on: minikube
-    environment: production
-    steps:
-      - name: Clear workspace
-        run: rm -rf $GITHUB_WORKSPACE/*
+  # deploy_minikube:
+  #   needs: [build_backend, build_frontend]
+  #   runs-on: minikube
+  #   environment: production
+  #   steps:
+  #     - name: Clear workspace
+  #       run: rm -rf $GITHUB_WORKSPACE/*
 
-      - name: Checkout Code
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+  #       with:
+  #         clean: true
+
+  #     - name: Cleanup old release
+  #       run: |
+  #         helm uninstall mern -n mern-test || true
+  #         kubectl delete namespace mern-test --ignore-not-found=true
+
+  #     - name: Fresh deploy with Helm
+  #       run: |
+  #         helm upgrade --install mern charts/mern-admin -n mern-test \
+  #           --create-namespace \
+  #           --set backend.image.repository="${{ env.DOCKER_REPO }}" \
+  #           --set backend.image.tag="backend-${{ needs.build_backend.outputs.TIMESTAMP }}-${{ github.sha }}" \
+  #           --set frontend.image.repository="${{ env.DOCKER_REPO }}" \
+  #           --set frontend.image.tag="frontend-${{ needs.build_backend.outputs.TIMESTAMP }}-${{ github.sha }}" \
+  #           --set backend.secrets.databaseUri="${{ secrets.DATABASE }}" \
+  #           --set backend.secrets.jwtSecret="${{ secrets.JWT_SECRET }}" \
+  #           --set backend.secrets.secret="${{ secrets.SECRET }}" \
+  #           --set backend.secrets.key="${{ secrets.KEY }}"
+
+# -------------------
+# 5. Publish reports to GitHub Pages
+# -------------------
+  publish_pages:
+    needs: [build_backend, build_frontend]
+    runs-on: ubuntu-latest
+    outputs:
+      REPORT_DIR: ${{ steps.setdir.outputs.report_dir }}
+    steps:
+      - name: Download backend report
+        uses: actions/download-artifact@v4
+        with:
+          name: trivy-backend-html
+          path: backend_report
+
+      - name: Download frontend report
+        uses: actions/download-artifact@v4
+        with:
+          name: trivy-frontend-html
+          path: frontend_report
+
+      - name: Prepare reports directory
+        id: setdir
+        run: |
+          REPORT_DIR="reports/${{ needs.build_backend.outputs.TIMESTAMP }}_${{ needs.build_backend.outputs.SHORT_SHA }}"
+          mkdir -p "${REPORT_DIR}"
+          cp backend_report/trivy-backend-report.html "${REPORT_DIR}/backend.html"
+          cp frontend_report/trivy-frontend-report.html "${REPORT_DIR}/frontend.html"
+          echo "report_dir=${REPORT_DIR}" >> $GITHUB_OUTPUT
+
+      - name: Checkout gh-pages
         uses: actions/checkout@v4
         with:
-          clean: true
+          ref: gh-pages
 
-      - name: Cleanup old release
+      - name: Copy reports
         run: |
-          helm uninstall mern -n mern-test || true
-          kubectl delete namespace mern-test --ignore-not-found=true
+          mkdir -p "${{ steps.setdir.outputs.report_dir }}"
+          cp -r "${{ steps.setdir.outputs.report_dir }}" "./${{ steps.setdir.outputs.report_dir }}"
 
-      - name: Fresh deploy with Helm
+      - name: Commit and push
         run: |
-          helm upgrade --install mern charts/mern-admin -n mern-test \
-            --create-namespace \
-            --set backend.image.repository="${{ env.DOCKER_REPO }}" \
-            --set backend.image.tag="backend-${{ env.TIMESTAMP }}-${{ github.sha }}" \
-            --set frontend.image.repository="${{ env.DOCKER_REPO }}" \
-            --set frontend.image.tag="frontend-${{ env.TIMESTAMP }}-${{ github.sha }}" \
-            --set backend.secrets.databaseUri="${{ secrets.DATABASE }}" \
-            --set backend.secrets.jwtSecret="${{ secrets.JWT_SECRET }}" \
-            --set backend.secrets.secret="${{ secrets.SECRET }}" \
-            --set backend.secrets.key="${{ secrets.KEY }}"
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add "${{ steps.setdir.outputs.report_dir }}"
+          git commit -m "Add Trivy reports for ${{ steps.setdir.outputs.report_dir }}" || echo "No changes to commit"
+          git push origin gh-pages
 
 # -------------------
-# 5. Slack Notifications
+# 6. Slack notification (success)
 # -------------------
-  notify:
-    needs: [deploy_testing, deploy_minikube]
+  notify_success:
+    needs: [deploy_testing, publish_pages]
     runs-on: ubuntu-latest
     steps:
-      - name: Notify Slack
+      - name: Notify Slack (success)
         uses: slackapi/slack-github-action@v1.23.0
         with:
           payload: |
             {
-              "text": "✅ MERN pipeline completed!\nBranch: ${{ github.ref }}\nCommit: ${{ github.sha }}\nTimestamp: ${{ env.TIMESTAMP }}\nTrivy HTML reports archived."
+              "text": "✅ MERN pipeline succeeded!\nBranch: ${{ github.ref }}\nCommit: ${{ github.sha }}\nTrivy reports:\nhttps://dipen674.github.io/mern_admin_nodejs_fullstack/${{ needs.publish_pages.outputs.REPORT_DIR }}/"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+# -------------------
+# 7. Slack notification (failure)
+# -------------------
+  notify_failure:
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Slack (failure)
+        uses: slackapi/slack-github-action@v1.23.0
+        with:
+          payload: |
+            {
+              "text": "❌ MERN pipeline failed!\nBranch: ${{ github.ref }}\nCommit: ${{ github.sha }}\nCheck GitHub Actions for logs."
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
