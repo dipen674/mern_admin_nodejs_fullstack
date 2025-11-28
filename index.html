@@ -1,13 +1,124 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MERN Trivy Reports</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap">
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --card-bg: #fff;
+      --text: #333;
+      --accent: #3498db;
+    }
+    body.dark {
+      --bg: #1e1e2f;
+      --card-bg: #2c2c3c;
+      --text: #eee;
+      --accent: #00bcd4;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 0;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+    header {
+      background: var(--accent);
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .container {
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .card {
+      background: var(--card-bg);
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      transition: transform 0.2s ease;
+    }
+    .card:hover {
+      transform: scale(1.02);
+    }
+    .card a {
+      text-decoration: none;
+      color: var(--accent);
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+    .meta {
+      font-size: 0.85rem;
+      color: #777;
+      margin-top: 0.5rem;
+    }
+    .footer {
+      text-align: center;
+      margin-top: 3rem;
+      font-size: 0.9rem;
+      color: #999;
+    }
+    .toggle {
+      background: none;
+      border: 2px solid white;
+      color: white;
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
-  <h1>MERN Trivy Reports</h1>
-  <ul>
-    <li><a href="trivy-backend-report.html">Backend Report</a></li>
-    <li><a href="trivy-frontend-report.html">Frontend Report</a></li>
-  </ul>
+  <header>
+    <div>MERN Trivy Dashboard</div>
+    <button class="toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
+  </header>
+
+  <div class="container">
+    <h1>📊 Vulnerability Reports</h1>
+
+    <div class="card">
+      <a href="trivy-backend-report.html">🔧 Backend Report</a>
+      <div class="meta">Generated: <span id="backend-time"></span> · Commit: <code id="backend-sha"></code></div>
+    </div>
+
+    <div class="card">
+      <a href="trivy-frontend-report.html">🎨 Frontend Report</a>
+      <div class="meta">Generated: <span id="frontend-time"></span> · Commit: <code id="frontend-sha"></code></div>
+    </div>
+
+    <div class="footer">
+      Powered by GitHub Actions · Hosted on GitHub Pages
+    </div>
+  </div>
+
+  <script>
+    function toggleTheme() {
+      document.body.classList.toggle('dark');
+    }
+
+    // Simulated metadata — replace with real values if templating
+    const timestamp = new Date().toLocaleString();
+    const sha = window.location.search.split('sha=')[1] || 'N/A';
+
+    document.getElementById('backend-time').textContent = timestamp;
+    document.getElementById('frontend-time').textContent = timestamp;
+    document.getElementById('backend-sha').textContent = sha;
+    document.getElementById('frontend-sha').textContent = sha;
+  </script>
 </body>
 </html>
