@@ -25,7 +25,7 @@ services:
     ports:
       - "8888:8888"
     env_file:
-      - ./backend/variables.env   # non-sensitive configs
+      - ./backend/.variables.env   # non-sensitive configs
     environment:
       - DATABASE=${DATABASE}
       - JWT_SECRET=${JWT_SECRET}

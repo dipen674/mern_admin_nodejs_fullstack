@@ -5,6 +5,5 @@ frontend/node_modules/
 .idea
 notes.md
 # .variables.env
-charts/mern-admin/templates/secret.yaml
 *.pem
 *.key

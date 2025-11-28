@@ -19,9 +19,9 @@ fi
 
 # --- Step 1: Configuration and Storage Layer ---
 echo -e "${YELLOW}--- 1. Applying Configuration and Database Layer (Secrets, PVC, SVC) ---${NC}"
-kubectl apply -f 01-secrets.yaml
-kubectl apply -f 03-mongodb-svc.yaml  # Service must exist before StatefulSet
-kubectl apply -f 02-mongodb-pvc.yaml   # Creates the MongoDB StatefulSet and PVC
+kubectl apply -f secrets.yaml
+kubectl apply -f mongodb-svc.yaml  # Service must exist before StatefulSet
+kubectl apply -f mongodb-pvc.yaml   # Creates the MongoDB StatefulSet and PVC
 
 # --- Step 2: WAIT FOR MONGODB ---
 echo -e "\n${YELLOW}--- 2. Waiting for MongoDB Pod to be Ready (Max 5 minutes) ---${NC}"
@@ -35,17 +35,17 @@ echo -e "${GREEN}SUCCESS: MongoDB is Ready.${NC}"
 
 # --- Step 3: Application Services Layer ---
 echo -e "\n${YELLOW}--- 3. Applying Application Services (Backend & Frontend) ---${NC}"
-kubectl apply -f 05-backend-svc.yaml
-kubectl apply -f 07-frontend-svc.yaml
+kubectl apply -f backend-svc.yaml
+kubectl apply -f frontend-svc.yaml
 
 # --- Step 4: Application Deployment Layer ---
 echo -e "\n${YELLOW}--- 4. Applying Deployments (Backend & Frontend) ---${NC}"
-kubectl apply -f 04-backend-deployment.yaml
-kubectl apply -f 06-frontend-deployment.yaml
+kubectl apply -f backend-deployment.yaml
+kubectl apply -f frontend-deployment.yaml
 
 # --- Step 5: External Exposure ---
 echo -e "\n${YELLOW}--- 5. Applying Ingress Route ---${NC}"
-kubectl apply -f 08-ingress.yaml
+kubectl apply -f ingress.yaml
 
 # --- Step 6: Final Verification ---
 echo -e "\n${YELLOW}--- 6. Final Status and Access Information ---${NC}"

@@ -5,6 +5,7 @@ metadata:
 data:
   NODE_ENV: {{ .Values.backend.env.nodeEnv | quote }}
   PORT: {{ .Values.backend.port | quote }}
+  JWT_SCHEME: {{ .Values.backend.secrets.jwtScheme | quote }}
   JWT_TOKEN_PREFIX: {{ .Values.backend.secrets.jwtTokenPrefix | quote }}
   JWT_TOKEN_EXPIRATION: {{ .Values.backend.secrets.jwtTokenExpiration | quote }}
   JWT_TOKEN_HASH_ALGO: {{ .Values.backend.secrets.jwtTokenHashAlgo | quote }}
