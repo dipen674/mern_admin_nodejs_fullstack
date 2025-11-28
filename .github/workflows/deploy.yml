@@ -210,7 +210,7 @@ jobs:
         with:
           payload: |
             {
-              "text": "✅ MERN pipeline succeeded!\nBranch: ${{ github.ref }}\nCommit: ${{ github.sha }}\nReports:\nBackend: https://<username>.github.io/<repo>/trivy-backend-report.html\nFrontend: https://<username>.github.io/<repo>/trivy-frontend-report.html"
+              "text": "✅ MERN pipeline succeeded!\nBranch: ${{ github.ref }}\nCommit: ${{ github.sha }}\nReports:\nBackend: https://dipen674.github.io/mern_admin_nodejs_fullstack/trivy-backend-report.html\nFrontend: https://dipen674.github.io/mern_admin_nodejs_fullstack/trivy-frontend-report.html"
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
