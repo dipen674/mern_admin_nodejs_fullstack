@@ -14,7 +14,7 @@ env:
 jobs:
   # -------------------
   # 1. Build Backend
-  # ------------------- 
+  # -------------------
   build_backend:
     runs-on: ubuntu-latest
     steps:
@@ -78,6 +78,11 @@ jobs:
     needs: [build_backend, build_frontend]
     runs-on: deployment_vm
     environment: staging
+    env:
+      DATABASE: ${{ secrets.DATABASE }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      SECRET: ${{ secrets.SECRET }}
+      KEY: ${{ secrets.KEY }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -88,27 +93,3 @@ jobs:
           docker compose -f docker-compose.yaml pull
           DOCKER_REPO=${{ env.DOCKER_REPO }} IMAGE_TAG=${{ env.IMAGE_TAG }} \
           docker compose -f docker-compose.yaml up -d --force-recreate
-
-  # # -------------------
-  # # 4. Deploy to Production (Minikube/Kubernetes via Helm)
-  # # -------------------
-  # deploy_production:
-  #   needs: [deploy_testing]
-  #   runs-on: minikube_vm
-  #   environment: production   # 👈 requires manual approval in GitHub settings
-  #   steps:
-  #     - name: Checkout Code
-  #       uses: actions/checkout@v4
-
-  #     - name: Set up kubectl
-  #       run: |
-  #         kubectl config use-context minikube
-
-  #     - name: Deploy with Helm
-  #       run: |
-  #         helm upgrade --install mern ./charts/mern \
-  #           --set backend.image.repository=${{ env.DOCKER_REPO }} \
-  #           --set backend.image.tag=backend-${{ env.IMAGE_TAG }} \
-  #           --set frontend.image.repository=${{ env.DOCKER_REPO }} \
-  #           --set frontend.image.tag=frontend-${{ env.IMAGE_TAG }} \
-  #           --set frontend.env.REACT_APP_API_BASE_URL=${{ env.FRONTEND_API_BASE_URL }}
