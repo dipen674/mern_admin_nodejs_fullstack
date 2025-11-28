@@ -84,8 +84,13 @@ jobs:
       SECRET: ${{ secrets.SECRET }}
       KEY: ${{ secrets.KEY }}
     steps:
+      - name: Clear workspace
+        run: sudo rm -rf $GITHUB_WORKSPACE/*
+
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          clean: true
 
       - name: Pull and Deploy with Docker Compose
         run: |
@@ -102,16 +107,18 @@ jobs:
     runs-on: minikube
     environment: production
     steps:
+      - name: Clear workspace
+        run: rm -rf $GITHUB_WORKSPACE/*
+
       - name: Checkout Code
         uses: actions/checkout@v4
-
+        with:
+          clean: true
 
       - name: Inject Helm Values
         run: |
           helm upgrade --install mern charts/mern-admin -n mern-test \
             --create-namespace \
-            # --set backend.image.tag=backend-${{ env.IMAGE_TAG }} \
-            # --set frontend.image.tag=frontend-${{ env.IMAGE_TAG }} \
             --set backend.secrets.databaseUri="${{ secrets.DATABASE }}" \
             --set backend.secrets.jwtSecret="${{ secrets.JWT_SECRET }}" \
             --set backend.secrets.secret="${{ secrets.SECRET }}" \
