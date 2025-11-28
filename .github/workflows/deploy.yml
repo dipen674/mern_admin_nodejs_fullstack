@@ -13,15 +13,15 @@ env:
   FRONTEND_API_BASE_URL: /api/
 
 jobs:
-  # -------------------
-  # 1. Build Backend
-  # -------------------
+# -------------------
+# 1. Build Backend
+# -------------------
   build_backend:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-      
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -29,7 +29,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }} 
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build and Push Backend Image
         uses: docker/build-push-action@v5
@@ -41,15 +41,28 @@ jobs:
             ${{ env.DOCKER_REPO }}:backend-${{ env.IMAGE_TAG }}-${{ env.BUILD_DATE }}
             ${{ env.DOCKER_REPO }}:backend-latest
 
-  # -------------------
-  # 2. Build Frontend
-  # -------------------
+      - name: Scan Backend Image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.DOCKER_REPO }}:backend-${{ env.IMAGE_TAG }}-${{ env.BUILD_DATE }}
+          format: table
+          output: trivy-backend-report.txt
+
+      - name: Upload Backend Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: trivy-backend-report
+          path: trivy-backend-report.txt
+
+# -------------------
+# 2. Build Frontend
+# -------------------
   build_frontend:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-        
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -58,7 +71,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-          
+
       - name: Build and Push Frontend Image
         uses: docker/build-push-action@v5
         with:
@@ -71,9 +84,22 @@ jobs:
           build-args: |
             REACT_APP_API_BASE_URL=${{ env.FRONTEND_API_BASE_URL }}
 
-  # -------------------
-  # 3. Deploy to Testing (Docker Compose)
-  # -------------------
+      - name: Scan Frontend Image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.DOCKER_REPO }}:frontend-${{ env.IMAGE_TAG }}-${{ env.BUILD_DATE }}
+          format: table
+          output: trivy-frontend-report.txt
+
+      - name: Upload Frontend Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: trivy-frontend-report
+          path: trivy-frontend-report.txt
+
+# -------------------
+# 3. Deploy to Testing (Docker Compose)
+# -------------------
   deploy_testing:
     needs: [build_backend, build_frontend]
     runs-on: deployment_vm
@@ -102,31 +128,29 @@ jobs:
 # -------------------
 # 4. Deploy to Minikube (Helm)
 # -------------------
-  deploy_minikube:
-    needs: [build_backend, build_frontend]
-    runs-on: minikube
-    environment: production
-    steps:
-      - name: Clear workspace
-        run: rm -rf $GITHUB_WORKSPACE/*
+  # deploy_minikube:
+  #   needs: [build_backend, build_frontend]
+  #   runs-on: minikube
+  #   environment: production
+  #   steps:
+  #     - name: Clear workspace
+  #       run: rm -rf $GITHUB_WORKSPACE/*
 
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          clean: true
+  #     - name: Checkout Code
+  #       uses: actions/checkout@v4
+  #       with:
+  #         clean: true
 
-      - name: Cleanup old release
-        run: |
-          helm uninstall mern -n mern-test || true
-          kubectl delete namespace mern-test --ignore-not-found=true
+  #     - name: Cleanup old release
+  #       run: |
+  #         helm uninstall mern -n mern-test || true
+  #         kubectl delete namespace mern-test --ignore-not-found=true
 
-      - name: Fresh deploy with Helm
-        run: |
-          helm upgrade --install mern charts/mern-admin -n mern-test \
-            --create-namespace \
-            --set backend.secrets.databaseUri="${{ secrets.DATABASE }}" \
-            --set backend.secrets.jwtSecret="${{ secrets.JWT_SECRET }}" \
-            --set backend.secrets.secret="${{ secrets.SECRET }}" \
-            --set backend.secrets.key="${{ secrets.KEY }}"
-
-
+  #     - name: Fresh deploy with Helm
+  #       run: |
+  #         helm upgrade --install mern charts/mern-admin -n mern-test \
+  #           --create-namespace \
+  #           --set backend.secrets.databaseUri="${{ secrets.DATABASE }}" \
+  #           --set backend.secrets.jwtSecret="${{ secrets.JWT_SECRET }}" \
+  #           --set backend.secrets.secret="${{ secrets.SECRET }}" \
+  #           --set backend.secrets.key="${{ secrets.KEY }}"
