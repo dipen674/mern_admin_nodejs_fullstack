@@ -113,6 +113,8 @@ jobs:
           name: trivy-frontend-html
           path: trivy-frontend-report.html
 
+
+
 # -------------------
 # 3. Deploy to Testing (Docker Compose)
 # -------------------
@@ -135,6 +137,35 @@ jobs:
           docker compose -f docker-compose.yaml pull
           DOCKER_REPO=${{ env.DOCKER_REPO }} IMAGE_TAG=${{ github.sha }} \
           docker compose -f docker-compose.yaml up -d --force-recreate
+
+# -------------------
+# 4. Publish Reports to GitHub Pages
+# -------------------
+  publish_reports:
+    needs: [build_backend, build_frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Backend Report
+        uses: actions/download-artifact@v4
+        with:
+          name: trivy-backend-html
+          path: reports
+
+      - name: Download Frontend Report
+        uses: actions/download-artifact@v4
+        with:
+          name: trivy-frontend-html
+          path: reports
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: reports
+
 
 # -------------------
 # 4. Deploy to Minikube (Helm)
@@ -170,19 +201,20 @@ jobs:
 # 5. Slack Notifications
 # -------------------
   notify_success:
-      needs: [deploy_testing]
-      runs-on: ubuntu-latest
-      if: success()
-      steps:
-        - name: Slack success
-          uses: slackapi/slack-github-action@v1.23.0
-          with:
-            payload: |
-              {
-                "text": "✅ MERN pipeline succeeded!\nBranch: ${{ github.ref }}\nCommit: ${{ github.sha }}"
-              }
-          env:
-            SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+    needs: [deploy_testing, publish_reports]
+    runs-on: ubuntu-latest
+    if: success()
+    steps:
+      - name: Slack success
+        uses: slackapi/slack-github-action@v1.23.0
+        with:
+          payload: |
+            {
+              "text": "✅ MERN pipeline succeeded!\nBranch: ${{ github.ref }}\nCommit: ${{ github.sha }}\nReports:\nBackend: https://<username>.github.io/<repo>/trivy-backend-report.html\nFrontend: https://<username>.github.io/<repo>/trivy-frontend-report.html"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
 
   notify_failure:
     if: failure()
