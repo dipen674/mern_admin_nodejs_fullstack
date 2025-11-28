@@ -23,7 +23,7 @@ backend:
     jwtSecret: ""     # injected from GitHub Actions
     secret: ""        # injected from GitHub Actions
     key: ""           # injected from GitHub Actions
-    # databaseUri: "mongodb://mongodb-service:27017/mern-admin"
+    # databaseUri: "mongodb://mongodb:27017/mern-admin"
     # jwtSecret: "a49f599467e0726a75ad5a01a65c27a3b34285bb5e3d954a6f8b9b3d256b6ef2"
     # secret: "9f8a7c6d5e4b3a2c1d0f"
     # key: "abc123xyz789"

@@ -108,14 +108,19 @@ jobs:
     environment: production
     steps:
       - name: Clear workspace
-        run: rm -rf $GITHUB_WORKSPACE/*
+        run: sudo rm -rf $GITHUB_WORKSPACE/*
 
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
           clean: true
 
-      - name: Inject Helm Values
+      - name: Cleanup old release
+        run: |
+          helm uninstall mern -n mern-test || true
+          kubectl delete namespace mern-test --ignore-not-found=true
+
+      - name: Fresh deploy with Helm
         run: |
           helm upgrade --install mern charts/mern-admin -n mern-test \
             --create-namespace \
@@ -123,4 +128,5 @@ jobs:
             --set backend.secrets.jwtSecret="${{ secrets.JWT_SECRET }}" \
             --set backend.secrets.secret="${{ secrets.SECRET }}" \
             --set backend.secrets.key="${{ secrets.KEY }}"
+
 
