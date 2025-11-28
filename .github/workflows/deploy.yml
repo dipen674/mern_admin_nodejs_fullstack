@@ -42,18 +42,20 @@ jobs:
             ${{ env.DOCKER_REPO }}:backend-${{ env.TIMESTAMP }}-${{ github.sha }}
             ${{ env.DOCKER_REPO }}:backend-latest
 
-      - name: Trivy Image Scan (Backend)
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ env.DOCKER_REPO }}:backend-${{ env.TIMESTAMP }}-${{ github.sha }}
-          format: table
-          output: trivy-backend-report.txt
+      - name: Download Trivy HTML template
+        run: wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl -O html.tpl
 
-      - name: Upload Backend Report
+      - name: Generate Trivy HTML Report (Backend)
+        run: |
+          trivy image --format template --template "@html.tpl" \
+            -o trivy-backend-report.html \
+            ${{ env.DOCKER_REPO }}:backend-${{ env.TIMESTAMP }}-${{ github.sha }}
+
+      - name: Upload Backend HTML Report
         uses: actions/upload-artifact@v4
         with:
-          name: trivy-backend-report
-          path: trivy-backend-report.txt
+          name: trivy-backend-html
+          path: trivy-backend-report.html
 
 # -------------------
 # 2. Build & Scan Frontend
@@ -88,18 +90,20 @@ jobs:
           build-args: |
             REACT_APP_API_BASE_URL=${{ env.FRONTEND_API_BASE_URL }}
 
-      - name: Trivy Image Scan (Frontend)
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ env.DOCKER_REPO }}:frontend-${{ env.TIMESTAMP }}-${{ github.sha }}
-          format: table
-          output: trivy-frontend-report.txt
+      - name: Download Trivy HTML template
+        run: wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl -O html.tpl
 
-      - name: Upload Frontend Report
+      - name: Generate Trivy HTML Report (Frontend)
+        run: |
+          trivy image --format template --template "@html.tpl" \
+            -o trivy-frontend-report.html \
+            ${{ env.DOCKER_REPO }}:frontend-${{ env.TIMESTAMP }}-${{ github.sha }}
+
+      - name: Upload Frontend HTML Report
         uses: actions/upload-artifact@v4
         with:
-          name: trivy-frontend-report
-          path: trivy-frontend-report.txt
+          name: trivy-frontend-html
+          path: trivy-frontend-report.html
 
 # -------------------
 # 3. Deploy to Testing (Docker Compose)
@@ -164,13 +168,13 @@ jobs:
   notify:
     needs: [deploy_testing]
     runs-on: ubuntu-latest
-    steps: 
+    steps:
       - name: Notify Slack
         uses: slackapi/slack-github-action@v1.23.0
         with:
           payload: |
             {
-              "text": "✅ MERN pipeline completed!\nBranch: ${{ github.ref }}\nCommit: ${{ github.sha }}\nTimestamp: ${{ env.TIMESTAMP }}\nArtifacts: Trivy reports archived."
+              "text": "✅ MERN pipeline completed!\nBranch: ${{ github.ref }}\nCommit: ${{ github.sha }}\nTimestamp: ${{ env.TIMESTAMP }}\nTrivy reports archived as HTML."
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
