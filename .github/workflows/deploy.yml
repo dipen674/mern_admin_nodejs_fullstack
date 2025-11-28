@@ -162,9 +162,9 @@ jobs:
 # 5. Slack Notifications
 # -------------------
   notify:
-    needs: [deploy_testing, deploy_minikube]
+    needs: [deploy_testing]
     runs-on: ubuntu-latest
-    steps:
+    steps: 
       - name: Notify Slack
         uses: slackapi/slack-github-action@v1.23.0
         with:
