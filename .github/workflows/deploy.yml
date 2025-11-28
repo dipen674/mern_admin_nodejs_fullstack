@@ -8,12 +8,13 @@ on:
 
 env:
   DOCKER_REPO: deependrabhatta/githubactions_mern
-  
   IMAGE_TAG: ${{ github.sha }}
-  
   FRONTEND_API_BASE_URL: /api/
 
 jobs:
+  # -------------------
+  # 1. Build Backend
+  # ------------------- 
   build_backend:
     runs-on: ubuntu-latest
     steps:
@@ -32,14 +33,17 @@ jobs:
       - name: Build and Push Backend Image
         uses: docker/build-push-action@v5
         with:
-          context: . 
+          context: .
           push: true
-          
+          no-cache: true
           tags: |
-            ${{ env.DOCKER_REPO }}:backend-latest
             ${{ env.DOCKER_REPO }}:backend-${{ env.IMAGE_TAG }}
+            ${{ env.DOCKER_REPO }}:backend-latest
           file: ./Dockerfile
 
+  # -------------------
+  # 2. Build Frontend
+  # -------------------
   build_frontend:
     runs-on: ubuntu-latest
     steps:
@@ -60,30 +64,51 @@ jobs:
         with:
           context: ./frontend
           push: true
+          no-cache: true
           tags: |
-            ${{ env.DOCKER_REPO }}:frontend-latest
             ${{ env.DOCKER_REPO }}:frontend-${{ env.IMAGE_TAG }}
+            ${{ env.DOCKER_REPO }}:frontend-latest
           build-args: |
             REACT_APP_API_BASE_URL=${{ env.FRONTEND_API_BASE_URL }}
-            
-  deploy:
-    # Requires both build jobs to succeed before running
+
+  # -------------------
+  # 3. Deploy to Testing (Docker Compose)
+  # -------------------
+  deploy_testing:
     needs: [build_backend, build_frontend]
-    
-    # Run this job on self-hosted runner
-    runs-on: deployment_vm 
-    
+    runs-on: deployment_vm
+    environment: staging
     steps:
       - name: Checkout Code
-        # The self-hosted runner needs the code files (especially docker-compose.yml)
         uses: actions/checkout@v4
 
       - name: Pull and Deploy with Docker Compose
         run: |
-          # 1. Pull the newly built images (using the latest tag)
+          DOCKER_REPO=${{ env.DOCKER_REPO }} IMAGE_TAG=${{ env.IMAGE_TAG }} \
           docker compose -f docker-compose.yaml pull
-          
-          # 2. Stop and remove old containers, then create and start new ones
-          # -d: run in detached mode
-          # --force-recreate: ensures new containers are created from the new images
+          DOCKER_REPO=${{ env.DOCKER_REPO }} IMAGE_TAG=${{ env.IMAGE_TAG }} \
           docker compose -f docker-compose.yaml up -d --force-recreate
+
+  # # -------------------
+  # # 4. Deploy to Production (Minikube/Kubernetes via Helm)
+  # # -------------------
+  # deploy_production:
+  #   needs: [deploy_testing]
+  #   runs-on: minikube_vm
+  #   environment: production   # 👈 requires manual approval in GitHub settings
+  #   steps:
+  #     - name: Checkout Code
+  #       uses: actions/checkout@v4
+
+  #     - name: Set up kubectl
+  #       run: |
+  #         kubectl config use-context minikube
+
+  #     - name: Deploy with Helm
+  #       run: |
+  #         helm upgrade --install mern ./charts/mern \
+  #           --set backend.image.repository=${{ env.DOCKER_REPO }} \
+  #           --set backend.image.tag=backend-${{ env.IMAGE_TAG }} \
+  #           --set frontend.image.repository=${{ env.DOCKER_REPO }} \
+  #           --set frontend.image.tag=frontend-${{ env.IMAGE_TAG }} \
+  #           --set frontend.env.REACT_APP_API_BASE_URL=${{ env.FRONTEND_API_BASE_URL }}
