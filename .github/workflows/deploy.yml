@@ -170,32 +170,32 @@ jobs:
 # -------------------
 # 4. Deploy to Minikube (Helm)
 # -------------------
-  # deploy_minikube:
-  #   needs: [build_backend, build_frontend]
-  #   runs-on: minikube
-  #   environment: production
-  #   steps:
-  #     - name: Clear workspace
-  #       run: rm -rf $GITHUB_WORKSPACE/*
+  deploy_minikube:
+    needs: [build_backend, build_frontend]
+    runs-on: minikube
+    environment: production
+    steps:
+      - name: Clear workspace
+        run: rm -rf $GITHUB_WORKSPACE/*
 
-  #     - name: Checkout Code
-  #       uses: actions/checkout@v4
-  #       with:
-  #         clean: true
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          clean: true
 
-  #     - name: Cleanup old release
-  #       run: |
-  #         helm uninstall mern -n mern-test || true
-  #         kubectl delete namespace mern-test --ignore-not-found=true
+      - name: Cleanup old release
+        run: |
+          helm uninstall mern -n mern-test || true
+          kubectl delete namespace mern-test --ignore-not-found=true
 
-  #     - name: Fresh deploy with Helm
-  #       run: |
-  #         helm upgrade --install mern charts/mern-admin -n mern-test \
-  #           --create-namespace \
-  #           --set backend.secrets.databaseUri="${{ secrets.DATABASE }}" \
-  #           --set backend.secrets.jwtSecret="${{ secrets.JWT_SECRET }}" \
-  #           --set backend.secrets.secret="${{ secrets.SECRET }}" \
-  #           --set backend.secrets.key="${{ secrets.KEY }}"
+      - name: Fresh deploy with Helm
+        run: |
+          helm upgrade --install mern charts/mern-admin -n mern-test \
+            --create-namespace \
+            --set backend.secrets.databaseUri="${{ secrets.DATABASE }}" \
+            --set backend.secrets.jwtSecret="${{ secrets.JWT_SECRET }}" \
+            --set backend.secrets.secret="${{ secrets.SECRET }}" \
+            --set backend.secrets.key="${{ secrets.KEY }}"
 
 # -------------------
 # 5. Slack Notifications
@@ -210,7 +210,7 @@ jobs:
         with:
           payload: |
             {
-              "text": "✅ MERN pipeline succeeded!\nBranch: ${{ github.ref }}\nCommit: ${{ github.sha }}\nReports:\nBackend: https://dipen674.github.io/mern_admin_nodejs_fullstack/trivy-backend-report.html\nFrontend: https://dipen674.github.io/mern_admin_nodejs_fullstack/trivy-frontend-report.html"
+              "text": "✅ MERN pipeline succeeded!\nBranch: ${{ github.ref }}\nCommit: ${{ github.sha }}\nReports: https://dipen674.github.io/mern_admin_nodejs_fullstack"
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
