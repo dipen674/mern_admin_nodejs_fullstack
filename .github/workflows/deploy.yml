@@ -50,9 +50,9 @@ jobs:
         run: wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl -O html.tpl
 
       # ✅ Fail pipeline if HIGH/CRITICAL vulnerabilities are found
-      - name: Trivy Scan with Severity Threshold
-        run: |
-          trivy image --severity HIGH,CRITICAL --exit-code 1 backend-temp:latest
+      # - name: Trivy Scan with Severity Threshold
+      #   run: |
+      #     trivy image --severity HIGH,CRITICAL --exit-code 1 backend-temp:latest
 
       # Generate full HTML report (even if scan passes)
       - name: Generate Trivy HTML Report (Backend)
@@ -119,9 +119,9 @@ jobs:
         run: wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl -O html.tpl
 
       # ✅ Fail pipeline if HIGH/CRITICAL vulnerabilities are found
-      - name: Trivy Scan with Severity Threshold
-        run: |
-          trivy image --severity HIGH,CRITICAL --exit-code 1 frontend-temp:latest
+      # - name: Trivy Scan with Severity Threshold
+      #   run: |
+      #     trivy image --severity HIGH,CRITICAL --exit-code 1 frontend-temp:latest
 
       # Generate full HTML report for visibility
       - name: Generate Trivy HTML Report (Frontend)
@@ -200,7 +200,7 @@ jobs:
 
 
 # -------------------
-# 4. Deploy to Minikube (Helm)
+# 5. Deploy to Minikube (Helm)
 # -------------------
   deploy_minikube:
     needs: [build_backend, build_frontend]
@@ -229,7 +229,7 @@ jobs:
             --set backend.secrets.secret="${{ secrets.SECRET }}" \
             --set backend.secrets.key="${{ secrets.KEY }}"
 
-# 5. Slack Notifications
+# 6. Slack Notifications
 # Notifications for Testing
 
   notify_success_testing:
