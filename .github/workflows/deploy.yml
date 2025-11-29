@@ -186,14 +186,14 @@ jobs:
           name: trivy-backend-html
           path: reports
 
-      - name: Copy index.html into reports
-        run: cp index.html reports/index.html
-
       - name: Download Frontend Report
         uses: actions/download-artifact@v4
         with:
           name: trivy-frontend-html
           path: reports
+
+      - name: Copy index.html into reports
+        run: cp index.html reports/index.html
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
