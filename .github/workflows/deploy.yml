@@ -177,7 +177,7 @@ jobs:
     needs: [build_backend, build_frontend]
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout current branch
         uses: actions/checkout@v4
 
       - name: Download Backend Report
@@ -192,14 +192,19 @@ jobs:
           name: trivy-frontend-html
           path: reports
 
-      - name: Copy index.html into reports
-        run: cp index.html reports/index.html
+      # ✅ Fetch index.html from gh-pages branch
+      - name: Fetch index.html from gh-pages
+        run: |
+          git fetch origin gh-pages
+          git checkout origin/gh-pages -- index.html
+          cp index.html reports/index.html
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: reports
+
 
 
 # -------------------
@@ -245,7 +250,7 @@ jobs:
         with:
           payload: |
             {
-              "text": "✅ MERN pipeline (Testing) succeeded!\nBranch: ${{ github.ref }}\nCommit: ${{ github.sha }}\nReports: https://dipen674.github.io/mern_admin_nodejs_fullstack"
+              "text": "✅ MERN pipeline (Testing) succeeded!\nWorkflow: ${{ github.workflow }}\nEvent: ${{ github.event_name }}\nTriggered by: ${{ github.actor }}\nBranch: ${{ github.ref }}\nCommit: ${{ github.sha }}\nReports: https://dipen674.github.io/mern_admin_nodejs_fullstack"
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -260,13 +265,13 @@ jobs:
         with:
           payload: |
             {
-              "text": "❌ MERN pipeline (Testing) failed!\nBranch: ${{ github.ref }}\nCommit: ${{ github.sha }}\nCheck GitHub Actions logs."
+              "text": "❌ MERN pipeline (Testing) failed!\nWorkflow: ${{ github.workflow }}\nEvent: ${{ github.event_name }}\nTriggered by: ${{ github.actor }}\nBranch: ${{ github.ref }}\nCommit: ${{ github.sha }}\nLogs: https://github.com/dipen674/mern_admin_nodejs_fullstack/actions/runs/${{ github.run_id }}"
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
   # Notifications for Minikube (manual approval flow)
- 
+
   notify_success_minikube:
     needs: [deploy_minikube, publish_reports]
     runs-on: ubuntu-latest
@@ -277,7 +282,7 @@ jobs:
         with:
           payload: |
             {
-              "text": "✅ MERN pipeline (Minikube) succeeded!\nBranch: ${{ github.ref }}\nCommit: ${{ github.sha }}\nReports: https://dipen674.github.io/mern_admin_nodejs_fullstack"
+              "text": "✅ MERN pipeline (Minikube) succeeded!\nWorkflow: ${{ github.workflow }}\nEvent: ${{ github.event_name }}\nTriggered by: ${{ github.actor }}\nBranch: ${{ github.ref }}\nCommit: ${{ github.sha }}\nReports: https://dipen674.github.io/mern_admin_nodejs_fullstack"
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -292,7 +297,7 @@ jobs:
         with:
           payload: |
             {
-              "text": "❌ MERN pipeline (Minikube) failed!\nBranch: ${{ github.ref }}\nCommit: ${{ github.sha }}\nCheck GitHub Actions logs."
+              "text": "❌ MERN pipeline (Minikube) failed!\nWorkflow: ${{ github.workflow }}\nEvent: ${{ github.event_name }}\nTriggered by: ${{ github.actor }}\nBranch: ${{ github.ref }}\nCommit: ${{ github.sha }}\nLogs: https://github.com/dipen674/mern_admin_nodejs_fullstack/actions/runs/${{ github.run_id }}"
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
