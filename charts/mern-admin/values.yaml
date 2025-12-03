@@ -1,5 +1,3 @@
-# charts/mern/values.yaml
-
 global:
   nameOverride: ""
   fullnameOverride: ""
@@ -50,7 +48,7 @@ ingress:
   annotations:
     ingress.kubernetes.io/ssl-redirect: "false"
   hosts:
-    - host: ""    # keep empty for minikube IP
+    - host: ""    # keeping empty for minikube IP
       paths:
         - path: /
           pathType: Prefix

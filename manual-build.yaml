@@ -25,8 +25,8 @@ services:
     ports:
       - "8888:8888"
     env_file:
-      - ./backend/.variables.env   # non-sensitive configs
-      - ./.env  # sensitive configs
+      - ./backend/.variables.env 
+      - ./.env  
     volumes:
       - ./public/uploads:/app/public/uploads
     depends_on:
@@ -42,7 +42,7 @@ services:
     ports:
       - "3000:80"
     env_file:
-      - ./frontend/.env   # frontend configs (non-sensitive)
+      - ./frontend/.env 
     depends_on:
       - backend
     networks:

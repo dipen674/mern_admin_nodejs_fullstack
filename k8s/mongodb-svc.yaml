@@ -1,12 +1,12 @@
-# 03-mongodb-svc.yaml
+
 apiVersion: v1
 kind: Service
 metadata:
-  name: mongodb-service # This name MUST match the host in your mongo-uri secret
+  name: mongodb-service 
 spec:
   ports:
     - port: 27017
       targetPort: 27017
   selector:
     app: mongodb
-  clusterIP: None # Headless service for StatefulSet
+  clusterIP: None

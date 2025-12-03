@@ -11,9 +11,6 @@ env:
   FRONTEND_API_BASE_URL: /api/
 
 jobs:
-# -------------------
-# 1. Build & Scan Backend
-# -------------------
   build_backend:
     runs-on: ubuntu-latest
     steps:
@@ -32,7 +29,6 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # Build locally (not pushed yet)
       - name: Build Backend Image (local only)
         uses: docker/build-push-action@v5
         with:
@@ -49,12 +45,6 @@ jobs:
       - name: Download Trivy HTML template
         run: wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl -O html.tpl
 
-      # ✅ Fail pipeline if HIGH/CRITICAL vulnerabilities are found
-      # - name: Trivy Scan with Severity Threshold
-      #   run: |
-      #     trivy image --severity HIGH,CRITICAL --exit-code 1 backend-temp:latest
-
-      # Generate full HTML report (even if scan passes)
       - name: Generate Trivy HTML Report (Backend)
         run: |
           trivy image --format template --template "@html.tpl" \
@@ -67,7 +57,6 @@ jobs:
           name: trivy-backend-html
           path: trivy-backend-report.html
 
-      # ✅ Only push if scan step succeeded
       - name: Push Backend Image
         uses: docker/build-push-action@v5
         with:
@@ -78,8 +67,6 @@ jobs:
             ${{ env.DOCKER_REPO }}:backend-${{ env.TIMESTAMP }}-${{ github.sha }}
             ${{ env.DOCKER_REPO }}:backend-latest
 
-
-# 2. Build & Scan Frontend
 
   build_frontend:
     runs-on: ubuntu-latest
@@ -99,7 +86,6 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # Build image locally (not pushed yet)
       - name: Build Frontend Image (local only)
         uses: docker/build-push-action@v5
         with:
@@ -118,12 +104,6 @@ jobs:
       - name: Download Trivy HTML template
         run: wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl -O html.tpl
 
-      # ✅ Fail pipeline if HIGH/CRITICAL vulnerabilities are found
-      # - name: Trivy Scan with Severity Threshold
-      #   run: |
-      #     trivy image --severity HIGH,CRITICAL --exit-code 1 frontend-temp:latest
-
-      # Generate full HTML report for visibility
       - name: Generate Trivy HTML Report (Frontend)
         run: |
           trivy image --format template --template "@html.tpl" \
@@ -136,7 +116,6 @@ jobs:
           name: trivy-frontend-html
           path: trivy-frontend-report.html
 
-      # ✅ Only push if scan step succeeded
       - name: Push Frontend Image
         uses: docker/build-push-action@v5
         with:
@@ -149,7 +128,6 @@ jobs:
           build-args: |
             REACT_APP_API_BASE_URL=${{ env.FRONTEND_API_BASE_URL }}
 
-# 3. Deploy to Testing (Docker Compose)
   deploy_testing:
     needs: [build_backend, build_frontend]
     runs-on: deployment_vm
@@ -170,9 +148,6 @@ jobs:
           DOCKER_REPO=${{ env.DOCKER_REPO }} IMAGE_TAG=${{ github.sha }} \
           docker compose -f docker-compose.yaml up -d --force-recreate
 
-# -------------------
-# 4. Publish Reports to GitHub Pages
-# -------------------
   publish_reports:
     needs: [build_backend, build_frontend]
     runs-on: ubuntu-latest
@@ -192,7 +167,6 @@ jobs:
           name: trivy-frontend-html
           path: reports
 
-      # ✅ Fetch index.html from gh-pages branch
       - name: Fetch index.html from gh-pages
         run: |
           git fetch origin gh-pages
@@ -206,10 +180,6 @@ jobs:
           publish_dir: reports
 
 
-
-# -------------------
-# 5. Deploy to Minikube (Helm)
-# -------------------
   deploy_minikube:
     needs: [build_backend, build_frontend]
     runs-on: minikube
@@ -237,8 +207,6 @@ jobs:
             --set backend.secrets.secret="${{ secrets.SECRET }}" \
             --set backend.secrets.key="${{ secrets.KEY }}"
 
-# 6. Slack Notifications
-# Notifications for Testing
 
   notify_success_testing:
     needs: [deploy_testing, publish_reports]
@@ -250,7 +218,7 @@ jobs:
         with:
           payload: |
             {
-              "text": "✅ MERN pipeline (Testing) succeeded!\nWorkflow: ${{ github.workflow }}\nEvent: ${{ github.event_name }}\nTriggered by: ${{ github.actor }}\nBranch: ${{ github.ref }}\nCommit: ${{ github.sha }}\nReports: https://dipen674.github.io/mern_admin_nodejs_fullstack"
+              "text": "MERN pipeline (Testing) succeeded!\nWorkflow: ${{ github.workflow }}\nEvent: ${{ github.event_name }}\nTriggered by: ${{ github.actor }}\nBranch: ${{ github.ref }}\nCommit: ${{ github.sha }}\nReports: https://dipen674.github.io/mern_admin_nodejs_fullstack"
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -265,12 +233,11 @@ jobs:
         with:
           payload: |
             {
-              "text": "❌ MERN pipeline (Testing) failed!\nWorkflow: ${{ github.workflow }}\nEvent: ${{ github.event_name }}\nTriggered by: ${{ github.actor }}\nBranch: ${{ github.ref }}\nCommit: ${{ github.sha }}\nLogs: https://github.com/dipen674/mern_admin_nodejs_fullstack/actions/runs/${{ github.run_id }}"
+              "text": "MERN pipeline (Testing) failed!\nWorkflow: ${{ github.workflow }}\nEvent: ${{ github.event_name }}\nTriggered by: ${{ github.actor }}\nBranch: ${{ github.ref }}\nCommit: ${{ github.sha }}\nLogs: https://github.com/dipen674/mern_admin_nodejs_fullstack/actions/runs/${{ github.run_id }}"
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
-  # Notifications for Minikube (manual approval flow)
 
   notify_success_minikube:
     needs: [deploy_minikube, publish_reports]
@@ -282,7 +249,7 @@ jobs:
         with:
           payload: |
             {
-              "text": "✅ MERN pipeline (Minikube) succeeded!\nWorkflow: ${{ github.workflow }}\nEvent: ${{ github.event_name }}\nTriggered by: ${{ github.actor }}\nBranch: ${{ github.ref }}\nCommit: ${{ github.sha }}\nReports: https://dipen674.github.io/mern_admin_nodejs_fullstack"
+              "text": "MERN pipeline (Minikube) succeeded!\nWorkflow: ${{ github.workflow }}\nEvent: ${{ github.event_name }}\nTriggered by: ${{ github.actor }}\nBranch: ${{ github.ref }}\nCommit: ${{ github.sha }}\nReports: https://dipen674.github.io/mern_admin_nodejs_fullstack"
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -297,7 +264,7 @@ jobs:
         with:
           payload: |
             {
-              "text": "❌ MERN pipeline (Minikube) failed!\nWorkflow: ${{ github.workflow }}\nEvent: ${{ github.event_name }}\nTriggered by: ${{ github.actor }}\nBranch: ${{ github.ref }}\nCommit: ${{ github.sha }}\nLogs: https://github.com/dipen674/mern_admin_nodejs_fullstack/actions/runs/${{ github.run_id }}"
+              "text": "MERN pipeline (Minikube) failed!\nWorkflow: ${{ github.workflow }}\nEvent: ${{ github.event_name }}\nTriggered by: ${{ github.actor }}\nBranch: ${{ github.ref }}\nCommit: ${{ github.sha }}\nLogs: https://github.com/dipen674/mern_admin_nodejs_fullstack/actions/runs/${{ github.run_id }}"
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

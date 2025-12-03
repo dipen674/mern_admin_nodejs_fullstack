@@ -1,10 +1,9 @@
-# 07-frontend-svc.yaml
 apiVersion: v1
 kind: Service
 metadata:
   name: frontend
 spec:
-  type: ClusterIP # Ingress will provide external access
+  type: ClusterIP
   selector:
     app: frontend
   ports:

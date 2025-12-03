@@ -1,13 +1,11 @@
-# 05-backend-svc.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: backend # The frontend Nginx will look for this hostname
-spec:
+  name: backend 
   selector:
     app: backend
   ports:
     - protocol: TCP
       port: 8888
       targetPort: 8888
-  type: ClusterIP # Internal only
+  type: ClusterIP 
